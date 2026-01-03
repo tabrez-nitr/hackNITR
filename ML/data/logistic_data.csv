@@ -1,0 +1,2 @@
+timestamp,shipment_id,location,status,delay_minutes
+10:01,SHP001,Delhi,In Transit,0
