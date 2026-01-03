@@ -83,7 +83,82 @@ const registerUser = asyncHandler(async(req,res) => {
 
 })
 
+const loginUser = asyncHandler(async(req,res) => {
+    const {email,password} = req.body;
+
+    if(!email){
+        throw new apiError(400,"Email is required...")
+    }
+    if(!password){
+        throw new apiError(401,"password is required...");
+    }
+    if(!(email === email.toLowerCase()) || !email.includes("@")){
+       throw new apiError(403,"Invalid email..")
+   }
 
 
-export {registerUser}
+   //console.log(email);
+    const user = await User.findOne({email:email});
+    //console.log(user);
+    //const users = await User.find({});
+    //console.log("TOTAL USERS:", users.length);
+
+    
+    if(!user){
+        throw new apiError(403,"User not found...")
+    }
+
+
+    const validPassword = user.isPasswordCorrect(password);
+
+    if(!validPassword){
+        throw new apiError(405,"Password is incorrect..");
+    }
+    
+
+    const {refreshToken , accessToken} = await generateRefreshAccessToken(user._id)
+
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    const newuser = await User.findById(user._id).select("-password -refreshToken")
+    return res.status(200)
+    .cookie("accessToken",accessToken,options)
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new apiResponse(200,{
+            User : newuser,refreshToken,accessToken
+        },"Login successfully....")
+    )
+
+})
+
+const logoutUser = asyncHandler(async(req,res) => {
+      await User.findByIdAndDelete(
+        req.user._id,
+        {
+           $unset: {
+             refreshToken: 1
+           }
+        },
+        {
+            new: true
+        }
+    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res.status(200)
+    .clearCookie("accessToken",options)
+    .clearCookie("refreshToken",options)
+    .json(
+        new apiResponse(200,{},"You logout....")
+    )
+})
+
+export {registerUser,loginUser,logoutUser}
 
