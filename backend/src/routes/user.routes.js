@@ -6,7 +6,15 @@ import { changeCurrentPassword, changeProfile, loginUser, logoutUser, registerUs
 const userRouter = Router();
 
 
-userRouter.route("/register").post(upload.single("profile"),registerUser)
+userRouter.route("/register").post(
+    upload.fields([
+        {
+            name: "profileImage", 
+            maxCount: 1
+        }
+    ]), 
+    registerUser
+);
 userRouter.route("/login").post(upload.none(),loginUser);
 userRouter.route("/logout").post(verifyJWT,logoutUser);
 userRouter.route("/change-password").post(upload.none(),verifyJWT,changeCurrentPassword);
