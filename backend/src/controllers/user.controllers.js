@@ -137,7 +137,7 @@ const loginUser = asyncHandler(async(req,res) => {
 })
 
 const logoutUser = asyncHandler(async(req,res) => {
-      await User.findByIdAndDelete(
+      await User.findByIdAndUpdate(
         req.user._id,
         {
            $unset: {
@@ -160,5 +160,75 @@ const logoutUser = asyncHandler(async(req,res) => {
     )
 })
 
-export {registerUser,loginUser,logoutUser}
+const changeCurrentPassword = asyncHandler(async(req,res) => {
+    const {oldPassword,newPassword,confirmPassword} = req.body;
+    if(!oldPassword){
+        throw new apiError(400,"Old Password is required..");
+    }
+    if(!newPassword){
+        throw new apiError(401,"New Password is required..");
+    }
+    if(!confirmPassword){
+        throw new apiError(403,"Confirm Password is equired..");
+    }
+    if(oldPassword==newPassword){
+        throw new apiError(405,"Old Password and New Password should not be equal...")
+    }
+    if(newPassword != confirmPassword){
+        throw new apiError(406,"New password and Confirm password should be equal..");
+    }
+
+
+    const user = await User.findById(req?.user?._id);
+    if(!user){
+        throw new apiError(407,"User not found");
+    }
+
+    const validation = await user.isPasswordCorrect(oldPassword);
+
+    if(!validation){
+        throw new apiError("Password is incorrect..");
+    }
+
+    user.password = newPassword
+    await user.save();
+
+    return res.status(200).json(
+        new apiResponse(200,{},"Password changed successfully...")
+    )
+
+})
+
+const changeProfile = asyncHandler(async(req,res) => {
+    const newProfilePath = req?.file?.path;
+
+    if(!newProfilePath){
+        throw new apiError(400,"New Profile Picture is required...")
+    }
+
+    const newprofile = await uploadOnCloudinary(newProfilePath);
+    if(!newprofile){
+        throw new apiError(500,"problem in uploading profile...")
+    }
+
+    const user = await User.findById(req?.user?._id);
+    if(!user){
+        throw new apiError(500,"user not found..");
+    }
+
+    if(user.profile_id){
+        await deleteFromCloudinary(user.profile_id);
+    }
+
+    user.profile_id = newprofile.public_id;
+    user.profile = newprofile.url;
+    await user.save();
+
+    return res.status(200).json(
+        new apiResponse(200,{},"profile changed Successfully..")
+    )
+})
+
+
+export {registerUser,loginUser,logoutUser,changeCurrentPassword,changeProfile}
 
