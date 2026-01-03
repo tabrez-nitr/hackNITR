@@ -1,11 +1,10 @@
 import dotenv from "dotenv"
 dotenv.config({path: './.env'})
-
 import {app} from "./app.js"
 import conectDB from "./db/index.js"
 
 
-
+console.log("Index.js")
 conectDB()
 .then(() => {
     app.on("error",(error) => {

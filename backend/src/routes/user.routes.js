@@ -6,7 +6,15 @@ import { registerUser } from "../controllers/user.controllers.js";
 const userRouter = Router();
 
 
-userRouter.route("/register").post(upload.single("profile"),registerUser)
+userRouter.route("/register").post(
+    upload.fields([
+        {
+            name: "profileImage", 
+            maxCount: 1
+        }
+    ]), 
+    registerUser
+);
 
 
 export {userRouter};
